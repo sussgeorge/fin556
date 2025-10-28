@@ -1,0 +1,199 @@
+[
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x70bD4d3a937716b7Dc59896d60347Fe1b3Bfc598",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-26T05:51:41.325Z"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x3835afc5a9dbda9936676a3377bd8086b4aefe35",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 04:54:48",
+    "txHash": "0x989fd47bc2f643caf17e67ab6a533aa16e3052c2176a7c81d8b5bc0c8a5296a6"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x71bd20442e6df4acb7086a5c888f985bd3064811",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 08:09:36",
+    "txHash": "0x97eac021b6523d77118c13798386fe8525d76d3273638206b6116b457b16a039"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xcc128796f6fd9abfeb9f79b61aa7e5cba9e0ca46",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 08:24:24",
+    "txHash": "0x9cda5df44c633be3faf358aaa8ddda3c87ddb2a227ad5c69c20c2ffab0e60dc7"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x80a2789d00b37b29f9a7cc0cb057830b3ecc7b40",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 12:01:48",
+    "txHash": "0xdbcca099e4100835393d5d033cd83ea80183b3b8c9b7823f24a4e6109f5d38fe"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x957a72ddfa4cc7426bc604535570f5b1bcc748b3",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 13:11:00",
+    "txHash": "0xd2208180d671f096d886de12586ff09a9f4aae889f127bd576858d4b132bd89c"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xd37d9e511f343eb6fc97b5454cbcb65ef77f90b7",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 14:51:24",
+    "txHash": "0x93c6e58218eb0fefae63423e260f6a69ff19d78f7b9e0e3f3d6dba225e30dfae"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xd2e44f8b54ad4a0913ab672bb9cfc0ee3070b185",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 15:21:36",
+    "txHash": "0x7201e8f0d3d6575bcb73d52a6d49a6a4a46a933a273527815b00353db2cb90c5"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xbf28e7f7eb46c8909202c22b8d036b8a57038da5",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 15:47:00",
+    "txHash": "0x63d77151347f43331896784a4a391e17239502b72d0cfdb514b602993d5a509d"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xe41d8b2a06d533c2a63eea50f4f6de50135e80b8",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 17:02:12",
+    "txHash": "0x249e6f61512ddf8c52029cc7c7b4ffb7e05a41123d56a2dc4c5e961259a24307"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x39c7d2e33d835df0677dcb01722d36a24c889f49",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-19 19:36:36",
+    "txHash": "0x6d26f70fd986e18d7f3ae1cc9b78d8d419b78078c2ce480781e55a94c1e8f1eb"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x04e0a8a6f7ae218b01d5337b53fdfdbb9a4fc8e0",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 02:59:00",
+    "txHash": "0xe08ad0b366b46e64ec95da0d87e18b77e48bb7de49b13a17b53c142d04998b03"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x7f567b9cc12574d1473e8a4a7af53b4b62edb62d",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 03:37:00",
+    "txHash": "0xede3a1f49854a7d76a6c73c22990dcdceaa4a8568c7e74ab03cc8168e2edb4a2"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xe1cf870118d0d9ec7cf79f60cfb3eb478ccf8cf3",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 06:13:24",
+    "txHash": "0x75370ea573e964d5fd88b0f9e5e8cb42c32ffb53acfd23c162204c547f9a730d"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x8c4ff469ebae9945d7d00d583d1b011b383b7b7c",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 08:27:48",
+    "txHash": "0xc2eb582c0b68d1d77a680121a3b0e6cd3203502c5e4e63b2678c6ce8964e07a5"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x4c47ce4b4a43a65d183ed94c9e3532fc7554092a",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 08:43:24",
+    "txHash": "0x1df74dd3447e7e748209c39a83f26e0d1780c6e53b0c1a1371a9f1fb6c5045ae"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0xb9a771e0895769d7a26687d3bb81eac7a422f8cf",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 09:10:48",
+    "txHash": "0x5f5c4b85df183fca4a44fa60e931ace9aaff1f6b2d36cc00e29f493e424d8bbf"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x0a8d66b92e17eaf597aef943e1681d9b37d5940a",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-10-20 09:13:48",
+    "txHash": "0xe8c469fe8b0209a13214db76010893cc57d14a5110c563b4112db33c9b451228"
+  }
+]
