@@ -195,5 +195,25 @@
     "deployer": "0xF79577478B15FE648666B96229261F185979B722",
     "timestamp": "2025-10-20 09:13:48",
     "txHash": "0xe8c469fe8b0209a13214db76010893cc57d14a5110c563b4112db33c9b451228"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x451f9bf9652d52c2183662Cfc16715Bd2cd20788",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-11-01T02:23:27.634Z"
+  },
+  {
+    "name": "HoodiToken",
+    "symbol": "HOODI",
+    "supply": "1000000",
+    "decimals": 18,
+    "address": "0x511317BC6603dFaDD645AD2984F8c573F1B50134",
+    "network": "hoodi",
+    "deployer": "0xF79577478B15FE648666B96229261F185979B722",
+    "timestamp": "2025-11-01T03:26:15.627Z"
   }
 ]
