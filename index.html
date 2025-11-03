@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>FIN556 – Decentralized Exchange Dashboard</title>
+    <title>FIN556 – Decentralized Exchange Dashboard (Hoodi Testnet)</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
@@ -12,7 +12,6 @@
       :root {
         --nav: #002b5b;
         --accent: #00509e;
-        --muted: #555;
         --border: #d0d7de;
         --bg: #f6f8fa;
       }
@@ -29,7 +28,6 @@
         text-align: center;
         font-size: 1.3rem;
         font-weight: 600;
-        letter-spacing: 0.3px;
       }
       main {
         max-width: 1100px;
@@ -41,7 +39,6 @@
         padding-left: 10px;
         font-size: 1.1rem;
         color: var(--nav);
-        margin-top: 0;
       }
       .card {
         background: #fff;
@@ -51,42 +48,6 @@
         padding: 22px 28px;
         margin-top: 20px;
       }
-      .row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 20px;
-      }
-      .col {
-        flex: 1 1 200px;
-        min-width: 200px;
-      }
-      .col-account {
-        flex: 2 1 480px;
-        min-width: 440px;
-      }
-      .label {
-        font-weight: 600;
-        color: var(--nav);
-        margin-bottom: 6px;
-      }
-      #acc {
-        background: #f1f4f8;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-        padding: 8px 10px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        word-break: break-all;
-      }
-      input,
-      select {
-        width: 100%;
-        padding: 9px 10px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 0.95rem;
-      }
       button {
         background: var(--accent);
         color: #fff;
@@ -95,23 +56,13 @@
         padding: 10px 16px;
         font-weight: 600;
         cursor: pointer;
-        min-width: 150px;
-        transition: background 0.2s ease;
       }
       button:hover {
         background: #003d7a;
       }
-      .col-buttons {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 10px;
-        min-width: 180px;
-      }
       table {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed;
         margin-top: 12px;
       }
       th,
@@ -119,7 +70,6 @@
         text-align: left;
         border-bottom: 1px solid #e0e0e0;
         padding: 10px 12px;
-        word-break: break-word;
         font-size: 0.92rem;
       }
       th {
@@ -134,8 +84,20 @@
         margin-top: 8px;
         font-size: 0.92rem;
       }
-      #chain {
-        white-space: nowrap;
+      #quick-wallet {
+        background: #eaf2fb;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #walletAddressQuick {
+        font-family: ui-monospace, monospace;
+        color: #002b5b;
+        font-size: 0.9rem;
       }
       .toast {
         position: fixed;
@@ -145,43 +107,7 @@
         color: #fff;
         border-radius: 8px;
         padding: 12px 14px;
-        font-size: 0.9rem;
         display: none;
-      }
-      .warn {
-        color: #b36b00;
-      }
-      #pairSummaries {
-        margin-top: 16px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .pair-card {
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #f8fafc;
-        padding: 10px 14px;
-        width: 220px;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        cursor: pointer;
-      }
-      .pair-card strong {
-        color: var(--nav);
-        font-size: 0.95rem;
-      }
-      @media (max-width: 900px) {
-        .col-account {
-          flex: 1 1 100%;
-        }
-        .col-buttons {
-          align-items: stretch;
-        }
-        button {
-          width: 100%;
-        }
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
@@ -190,12 +116,22 @@
     <header>FIN556 – Decentralized Exchange Dashboard (Hoodi Testnet)</header>
 
     <main>
-      <!-- Wallet -->
+      <!-- Quick Wallet Connect -->
+      <div id="quick-wallet">
+        <button id="quickConnectBtn">🔗 Connect Wallet</button>
+        <span id="walletAddressQuick">Not connected</span>
+      </div>
+
+      <!-- Wallet Info -->
       <section class="card">
         <h3>Wallet Connection</h3>
-        <div id="wallet-connection">
-          <button id="connectButton">Connect Wallet</button>
-          <p>Wallet: <span id="walletAddress">Not Connected</span></p>
+        <div>
+          <div>
+            <strong>Account:</strong> <span id="acc">Not connected</span>
+          </div>
+          <div><strong>Network:</strong> <span id="chain">–</span></div>
+          <div><strong>Native Balance:</strong> <span id="ethBal">–</span></div>
+          <button id="btnSwitch">Switch Network</button>
         </div>
       </section>
 
@@ -216,34 +152,26 @@
         </table>
       </section>
 
-      <!-- Pools -->
+      <!-- Liquidity Pools -->
       <section class="card">
         <h3>Liquidity Pools</h3>
         <div id="pairList" class="info-box">No data loaded.</div>
       </section>
 
-      <!-- Trade -->
+      <!-- Trade Simulator -->
       <section class="card">
         <h3>Trade Simulator</h3>
-        <div class="row">
-          <div class="col">
-            <label class="label">From Token</label>
-            <select id="fromToken"></select>
-            <input id="fromAmount" placeholder="Amount" />
-          </div>
-          <div class="col">
-            <label class="label">To Token</label>
-            <select id="toToken"></select>
-            <input id="toAmount" placeholder="Estimated output" disabled />
-          </div>
-          <div class="col">
-            <label class="label">Slippage (%)</label>
-            <input id="slippage" value="1" />
-          </div>
-          <div class="col">
-            <label class="label">Deadline (mins)</label>
-            <input id="deadlineMins" value="10" />
-          </div>
+        <div>
+          <label>From Token</label>
+          <select id="fromToken"></select>
+          <input id="fromAmount" placeholder="Amount" />
+          <label>To Token</label>
+          <select id="toToken"></select>
+          <input id="toAmount" placeholder="Estimated output" disabled />
+          <label>Slippage (%)</label>
+          <input id="slippage" value="1" />
+          <label>Deadline (mins)</label>
+          <input id="deadlineMins" value="10" />
         </div>
         <div style="margin-top: 16px; text-align: right">
           <button id="btnQuote">Get Quote</button>
@@ -255,59 +183,161 @@
     <div id="toast" class="toast"></div>
 
     <script>
-      // --- Connect Wallet + Auto Reconnect ---
-      const connectButton = document.getElementById("connectButton");
-      const walletAddress = document.getElementById("walletAddress");
+      const HOODI = {
+        chainIdDec: 560048,
+        chainIdHex: "0x88BB0",
+        rpc: "https://rpc.hoodi.ethpandaops.io",
+        explorer: "https://hoodi.etherscan.io",
+      };
+      const ADDR = {
+        ROUTER: "0x5b491662E508c2E405500C8BF9d67E5dF780cD8e",
+        FACTORY: "0x342D7aeC78cd3b581eb67655B6B7Bb157328590e",
+        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225",
+      };
+      const TOKENS = [
+        { address: "0x341aac04059a1e81e6390177c4e4d1992b422d84" },
+        { address: "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435" },
+        { address: "0xC3c7E367D9047F8871ef553C02938189ca122f73" },
+        { address: "0x97a47102478072710fBe2b2fE6c762b1F6cf2B06" },
+        { address: "0x341dA74120EBFE04041F0D245cff62950ccfd64F" },
+      ];
+      const ERC20_ABI = [
+        "function name() view returns (string)",
+        "function symbol() view returns (string)",
+        "function decimals() view returns (uint8)",
+        "function balanceOf(address) view returns (uint256)",
+      ];
+      const PAIR_ABI = [
+        "function token0() view returns (address)",
+        "function token1() view returns (address)",
+        "function getReserves() view returns (uint112,uint112,uint32)",
+      ];
 
-      async function connectWallet() {
-        if (typeof window.ethereum !== "undefined") {
+      let provider, signer, account;
+      const el = (id) => document.getElementById(id);
+
+      function toast(msg, type = "info") {
+        const t = el("toast");
+        t.textContent = msg;
+        t.style.display = "block";
+        t.style.background =
+          type === "error" ? "#b91c1c" : type === "warn" ? "#b36b00" : "#333";
+        setTimeout(() => (t.style.display = "none"), 4000);
+      }
+
+      async function connect() {
+        if (!window.ethereum) return toast("Install MetaMask.", "warn");
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        account = await signer.getAddress();
+        el("acc").textContent = account;
+        el("walletAddressQuick").textContent = account;
+        await postConnect();
+      }
+
+      async function postConnect() {
+        try {
+          const bal = await provider.getBalance(account);
+          el("ethBal").textContent = `${ethers.formatEther(bal)} ETH`;
+          await renderTokens();
+          await renderPairs();
+          await initTradeUI();
+          toast("Wallet connected and data loaded!");
+        } catch (err) {
+          console.error("postConnect error", err);
+        }
+      }
+
+      async function renderTokens() {
+        const tbody = el("tokenList").querySelector("tbody");
+        tbody.innerHTML = "";
+        for (const t of TOKENS) {
           try {
-            const accounts = await ethereum.request({
-              method: "eth_requestAccounts",
-            });
-            const account = accounts[0];
-            walletAddress.innerText = account;
-            console.log("✅ Wallet connected:", account);
-            localStorage.setItem("connectedWallet", account);
+            const c = new ethers.Contract(t.address, ERC20_ABI, signer);
+            const [name, symbol, decimals, bal] = await Promise.all([
+              c.name(),
+              c.symbol(),
+              c.decimals(),
+              c.balanceOf(account),
+            ]);
+            const balance = ethers.formatUnits(bal, decimals);
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${name}</td><td>${symbol}</td><td>${decimals}</td>
+              <td>${Number(balance).toFixed(4)}</td>
+              <td><a href="${HOODI.explorer}/address/${
+              t.address
+            }" target="_blank">${t.address.slice(0, 6)}…${t.address.slice(
+              -4
+            )}</a></td>`;
+            tbody.appendChild(row);
           } catch (err) {
-            console.error("❌ Connection error:", err);
-          }
-        } else {
-          alert("Please install MetaMask!");
-        }
-      }
-
-      async function checkWalletConnection() {
-        if (typeof window.ethereum !== "undefined") {
-          const accounts = await ethereum.request({ method: "eth_accounts" });
-          if (accounts.length > 0) {
-            const account = accounts[0];
-            walletAddress.innerText = account;
-            console.log("🔄 Wallet auto-reconnected:", account);
-          } else {
-            walletAddress.innerText = "Not Connected";
+            console.warn("Token load failed:", t.address, err);
           }
         }
       }
 
-      if (typeof window.ethereum !== "undefined") {
-        ethereum.on("accountsChanged", (accounts) => {
-          if (accounts.length > 0) {
-            walletAddress.innerText = accounts[0];
-            console.log("🔁 Account changed:", accounts[0]);
-          } else {
-            walletAddress.innerText = "Not Connected";
+      async function renderPairs() {
+        const holder = el("pairList");
+        holder.textContent = "Loading pools...";
+        try {
+          const factory = new ethers.Contract(
+            ADDR.FACTORY,
+            ["function getPair(address,address) view returns (address)"],
+            signer
+          );
+          let html = `<table><tr><th>Pair Address</th><th>Token0</th><th>Reserve0</th><th>Token1</th><th>Reserve1</th></tr>`;
+          for (const t of TOKENS) {
+            const pairAddr = await factory.getPair(t.address, ADDR.WETH);
+            if (pairAddr === ethers.ZeroAddress) continue;
+            const pair = new ethers.Contract(pairAddr, PAIR_ABI, signer);
+            const [t0, t1, res] = await Promise.all([
+              pair.token0(),
+              pair.token1(),
+              pair.getReserves(),
+            ]);
+            html += `<tr><td><a href="${
+              HOODI.explorer
+            }/address/${pairAddr}" target="_blank">${pairAddr.slice(
+              0,
+              8
+            )}…${pairAddr.slice(-6)}</a></td>
+                     <td>${t0.slice(0, 6)}…</td><td>${Number(res[0])}</td>
+                     <td>${t1.slice(0, 6)}…</td><td>${Number(
+              res[1]
+            )}</td></tr>`;
           }
-        });
-
-        ethereum.on("chainChanged", (_chainId) => {
-          console.log("🌐 Network changed:", _chainId);
-          window.location.reload();
-        });
+          holder.innerHTML = html + "</table>";
+        } catch (err) {
+          holder.textContent = "Failed to load pools.";
+        }
       }
 
-      connectButton.addEventListener("click", connectWallet);
-      window.addEventListener("DOMContentLoaded", checkWalletConnection);
+      async function initTradeUI() {
+        const fromSel = el("fromToken");
+        const toSel = el("toToken");
+        fromSel.innerHTML = "";
+        toSel.innerHTML = "";
+        const assets = [
+          { name: "Ether", symbol: "ETH", address: "ETH", decimals: 18 },
+          ...TOKENS,
+        ];
+        for (const a of assets) {
+          const o1 = document.createElement("option");
+          o1.value = a.address;
+          o1.textContent = a.symbol;
+          fromSel.appendChild(o1);
+          const o2 = document.createElement("option");
+          o2.value = a.address;
+          o2.textContent = a.symbol;
+          toSel.appendChild(o2);
+        }
+        fromSel.value = "ETH";
+        if (TOKENS[0]) toSel.value = TOKENS[0].address;
+      }
+
+      el("quickConnectBtn").onclick = connect;
+      el("btnSwitch").onclick = connect;
     </script>
   </body>
 </html>
