@@ -148,10 +148,8 @@
       const ADDR = {
         ROUTER: "0x5b491662E508c2E405500C8BF9d67E5dF780cD8e",
         FACTORY: "0x342D7aeC78cd3b581eb67655B6B7Bb157328590e",
-        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225", // replace with correct Hoodi WETH
+        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225",
       };
-
-      // --- Team Tokens ---
       const TOKEN_ADDRS = [
         "0x341aac04059a1e81e6390177c4e4d1992b422d84",
         "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435",
@@ -159,9 +157,6 @@
         "0x97a47102478072710fBe2b2fE6c762b1F6cf2B06",
         "0x341dA74120EBFE04041F0D245cff62950ccfd64F",
       ];
-
-      // Optional: manually list liquidity pairs (can be auto-fetched later)
-      const PAIRS = ["0x5fC79c2B73e472F91b3747D15bD18D1f2a1F55Dd"];
 
       const ERC20_ABI = [
         "function name()view returns(string)",
@@ -175,6 +170,10 @@
         "function token0()view returns(address)",
         "function token1()view returns(address)",
         "function getReserves()view returns(uint112,uint112,uint32)",
+      ];
+      const FACTORY_ABI = [
+        "function allPairsLength()view returns(uint256)",
+        "function allPairs(uint256) view returns(address)",
       ];
       const ROUTER_ABI = [
         "function getAmountsOut(uint amountIn,address[] calldata path)view returns(uint[] memory amounts)",
@@ -200,6 +199,7 @@
         setTimeout(() => (t.style.display = "none"), 4000);
       }
 
+      // Ensure network
       async function ensureHoodi() {
         if (!window.ethereum) return;
         const net = await provider.getNetwork();
@@ -230,6 +230,7 @@
         }
       }
 
+      // Connect wallet
       async function connect() {
         if (!window.ethereum) return toast("Please install MetaMask!", "error");
         provider = new ethers.BrowserProvider(window.ethereum);
@@ -254,11 +255,13 @@
         }
 
         await loadTokens();
-        await loadPools();
+        const pairs = await fetchAllPairsFromFactory();
+        await loadPools(pairs);
         await initTradeUI();
         toast("Wallet connected!", "success");
       }
 
+      // Load team tokens
       async function loadTokens() {
         const tbody = $("tokenTable").querySelector("tbody");
         tbody.innerHTML = "";
@@ -286,11 +289,36 @@
         }
       }
 
-      async function loadPools() {
+      // Fetch pairs from factory
+      async function fetchAllPairsFromFactory() {
+        try {
+          const factory = new ethers.Contract(
+            ADDR.FACTORY,
+            FACTORY_ABI,
+            rpcProvider
+          );
+          const len = await factory.allPairsLength();
+          console.log("Total pairs:", len.toString());
+          const pairs = [];
+          for (let i = 0; i < Number(len) && i < 10; i++) {
+            const addr = await factory.allPairs(i);
+            pairs.push(addr);
+          }
+          console.log("Pairs:", pairs);
+          return pairs;
+        } catch (e) {
+          console.error("Factory fetch error:", e);
+          toast("Could not fetch pairs from factory", "error");
+          return [];
+        }
+      }
+
+      // Load pools
+      async function loadPools(pairList) {
         const div = $("poolList");
         div.textContent = "Loading liquidity pools...";
         let html = "";
-        for (const addr of PAIRS) {
+        for (const addr of pairList) {
           try {
             const pair = new ethers.Contract(addr, PAIR_ABI, rpcProvider);
             const [t0, t1] = await Promise.all([pair.token0(), pair.token1()]);
@@ -314,20 +342,21 @@
             else if (t1.toLowerCase() === ADDR.WETH.toLowerCase())
               p0eth = p1to0.toFixed(6);
             html += `<div style="margin-bottom:8px">
-      <b>${s0}/${s1}</b><br>
-      Reserves: ${R0.toFixed(4)} ${s0} / ${R1.toFixed(4)} ${s1}<br>
-      Price ${s0}→${s1}: ${p0to1.toFixed(6)} | ${s1}→${s0}: ${p1to0.toFixed(
+     <b>${s0}/${s1}</b><br>
+     Reserves: ${R0.toFixed(4)} ${s0} / ${R1.toFixed(4)} ${s1}<br>
+     Price ${s0}→${s1}: ${p0to1.toFixed(6)} | ${s1}→${s0}: ${p1to0.toFixed(
               6
             )}<br>
-      Derived: ${s0}→ETH: ${p0eth} | ${s1}→ETH: ${p1eth}
-    </div><hr>`;
+     Derived: ${s0}→ETH: ${p0eth} | ${s1}→ETH: ${p1eth}
+   </div><hr>`;
           } catch (e) {
-            console.error("pool error:", addr, e);
+            console.error("Pool error:", addr, e);
           }
         }
         div.innerHTML = html || "No data loaded (verify pair addresses)";
       }
 
+      // Populate Trade UI
       async function initTradeUI() {
         const from = $("fromToken"),
           to = $("toToken");
@@ -341,6 +370,7 @@
         to.innerHTML = opts.join("");
       }
 
+      // Quote and swap
       async function getQuote() {
         try {
           const router = new ethers.Contract(
