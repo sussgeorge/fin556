@@ -120,7 +120,7 @@
       <!-- Liquidity -->
       <section class="card">
         <h3>Liquidity Pools</h3>
-        <div id="poolList" class="info-box">No data loaded</div>
+        <div id="poolList" class="info-box">Loading...</div>
       </section>
 
       <!-- Trade -->
@@ -148,7 +148,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-      // ---- Network & addresses ----
+      // ---- Network setup ----
       const HOODI = {
         chainIdDec: 560048,
         chainIdHex: "0x88BB0",
@@ -159,25 +159,25 @@
       const ADDR = {
         ROUTER: "0x5b491662E508c2E405500C8BF9d67E5dF780cD8e",
         FACTORY: "0x342D7aeC78cd3b581eb67655B6B7Bb157328590e",
-        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225", // <– replace with real WETH on Hoodi
+        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225", // change to real Hoodi WETH
       };
 
-      const TOKEN_ADDRS = [
+      // example team pairs (replace with yours)
+      const PAIRS = [
+        "0x5fC79c2B73e472F91b3747D15bD18D1f2a1F55Dd",
         "0x341aac04059a1e81e6390177c4e4d1992b422d84",
-        "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435",
-        "0xC3c7E367D9047F8871ef553C02938189ca122f73",
-        "0x97a47102478072710fBe2b2fE6c762b1F6cf2B06",
-        "0x341dA74120EBFE04041F0D245cff62950ccfd64F",
       ];
 
-      // ---- ABIs ----
       const ERC20_ABI = [
         "function name() view returns (string)",
         "function symbol() view returns (string)",
         "function decimals() view returns (uint8)",
         "function balanceOf(address) view returns (uint256)",
-        "function allowance(address,address) view returns (uint256)",
-        "function approve(address,uint256) returns (bool)",
+      ];
+      const PAIR_ABI = [
+        "function token0() view returns (address)",
+        "function token1() view returns (address)",
+        "function getReserves() view returns (uint112,uint112,uint32)",
       ];
       const ROUTER_ABI = [
         "function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)",
@@ -186,14 +186,12 @@
         "function swapExactTokensForETH(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) returns (uint[] memory amounts)",
       ];
 
-      // ---- State ----
       let provider, signer, account;
       const rpcProvider = new ethers.JsonRpcProvider(HOODI.rpc);
       let tokenDetails = [];
 
-      // ---- Utils ----
       const $ = (id) => document.getElementById(id);
-      const toast = (msg, type = "info") => {
+      function toast(msg, type = "info") {
         const t = $("toast");
         t.textContent = msg;
         t.style.background =
@@ -204,14 +202,7 @@
             : "#333";
         t.style.display = "block";
         setTimeout(() => (t.style.display = "none"), 4000);
-      };
-
-      const buildPath = (from, to) => {
-        if (from === "ETH" && to !== "ETH") return [ADDR.WETH, to];
-        if (from !== "ETH" && to === "ETH") return [from, ADDR.WETH];
-        if (from !== "ETH" && to !== "ETH") return [from, ADDR.WETH, to];
-        throw new Error("ETH→ETH not valid");
-      };
+      }
 
       async function ensureHoodi() {
         if (!window.ethereum) return;
@@ -244,7 +235,6 @@
         }
       }
 
-      // ---- Connect ----
       async function connect() {
         if (!window.ethereum) return toast("Please install MetaMask!", "error");
         provider = new ethers.BrowserProvider(window.ethereum);
@@ -254,9 +244,9 @@
         $("walletAddr").textContent = account;
         await ensureHoodi();
 
-        // Balances
         const bal = await provider.getBalance(account);
         $("ethBalance").textContent = `${ethers.formatEther(bal)} ETH`;
+
         try {
           const weth = new ethers.Contract(ADDR.WETH, ERC20_ABI, rpcProvider);
           const wethBal = await weth.balanceOf(account);
@@ -270,16 +260,16 @@
 
         toast("Wallet connected!", "success");
         await loadTokens();
+        await loadPools();
         await initTradeUI();
       }
 
-      // ---- Load tokens ----
       async function loadTokens() {
         const tbody = $("tokenTable").querySelector("tbody");
         tbody.innerHTML = "";
         tokenDetails = [];
-
-        for (const addr of TOKEN_ADDRS) {
+        const sampleTokens = [ADDR.WETH, ...PAIRS];
+        for (const addr of sampleTokens) {
           try {
             const c = new ethers.Contract(addr, ERC20_ABI, rpcProvider);
             const [name, symbol, decimals, bal] = await Promise.all([
@@ -289,24 +279,62 @@
               c.balanceOf(account),
             ]);
             tokenDetails.push({ name, symbol, decimals, address: addr });
-            const row = `<tr><td>${name}</td><td>${symbol}</td><td>${decimals}</td><td>${ethers.formatUnits(
-              bal,
-              decimals
-            )}</td><td>${addr}</td></tr>`;
+            const row = `<tr><td>${name}</td><td>${symbol}</td><td>${decimals}</td>
+            <td>${ethers.formatUnits(bal, decimals)}</td><td>${addr}</td></tr>`;
             tbody.insertAdjacentHTML("beforeend", row);
-          } catch (e) {
-            console.warn("Token load error:", addr, e);
-          }
+          } catch {}
         }
       }
 
-      // ---- Trade UI ----
-      async function initTradeUI() {
-        const from = $("fromToken");
-        const to = $("toToken");
-        from.innerHTML = "";
-        to.innerHTML = "";
+      async function loadPools() {
+        const div = $("poolList");
+        div.textContent = "Loading pools...";
+        let html = "";
+        for (const addr of PAIRS) {
+          try {
+            const pair = new ethers.Contract(addr, PAIR_ABI, rpcProvider);
+            const [t0, t1] = await Promise.all([pair.token0(), pair.token1()]);
+            const [r0, r1, _] = await pair.getReserves();
 
+            const c0 = new ethers.Contract(t0, ERC20_ABI, rpcProvider);
+            const c1 = new ethers.Contract(t1, ERC20_ABI, rpcProvider);
+            const [s0, s1] = await Promise.all([c0.symbol(), c1.symbol()]);
+            const decimals0 = await c0.decimals();
+            const decimals1 = await c1.decimals();
+
+            const reserve0 = Number(ethers.formatUnits(r0, decimals0));
+            const reserve1 = Number(ethers.formatUnits(r1, decimals1));
+
+            const price0to1 = reserve1 / reserve0;
+            const price1to0 = reserve0 / reserve1;
+
+            let price0eth = "-",
+              price1eth = "-";
+            if (t0.toLowerCase() === ADDR.WETH.toLowerCase())
+              price1eth = price0to1;
+            else if (t1.toLowerCase() === ADDR.WETH.toLowerCase())
+              price0eth = price1to0;
+
+            html += `<div style="margin-bottom:8px">
+            <b>${s0}/${s1}</b><br>
+            Reserves: ${reserve0.toFixed(4)} ${s0} / ${reserve1.toFixed(
+              4
+            )} ${s1}<br>
+            Price ${s0}→${s1}: ${price0to1.toFixed(
+              6
+            )} | ${s1}→${s0}: ${price1to0.toFixed(6)}<br>
+            Derived: ${s0}→ETH: ${price0eth} | ${s1}→ETH: ${price1eth}
+          </div><hr>`;
+          } catch (e) {
+            console.error("Pool error", addr, e);
+          }
+        }
+        div.innerHTML = html || "No pools found";
+      }
+
+      async function initTradeUI() {
+        const from = $("fromToken"),
+          to = $("toToken");
         const opts = [
           `<option value="ETH">ETH</option>`,
           ...tokenDetails.map(
@@ -317,7 +345,6 @@
         to.innerHTML = opts.join("");
       }
 
-      // ---- Quote ----
       async function getQuote() {
         try {
           const router = new ethers.Contract(
@@ -325,15 +352,20 @@
             ROUTER_ABI,
             rpcProvider
           );
-          const from = $("fromToken").value;
-          const to = $("toToken").value;
-          const amt = $("fromAmount").value;
+          const from = $("fromToken").value,
+            to = $("toToken").value,
+            amt = $("fromAmount").value;
           if (!amt) return toast("Enter amount", "error");
           const fromMeta =
             from === "ETH"
               ? { decimals: 18 }
               : tokenDetails.find((t) => t.address === from);
-          const path = buildPath(from, to);
+          const path =
+            from === "ETH"
+              ? [ADDR.WETH, to]
+              : to === "ETH"
+              ? [from, ADDR.WETH]
+              : [from, ADDR.WETH, to];
           const amounts = await router.getAmountsOut(
             ethers.parseUnits(amt, fromMeta.decimals),
             path
@@ -354,7 +386,6 @@
         }
       }
 
-      // ---- Approve if needed ----
       async function ensureApproval(token, owner, spender, amount) {
         const c = new ethers.Contract(token, ERC20_ABI, signer);
         const allowance = await c.allowance(owner, spender);
@@ -364,31 +395,32 @@
         toast("Token approved!", "success");
       }
 
-      // ---- Swap ----
       async function executeSwap() {
         try {
           const router = new ethers.Contract(ADDR.ROUTER, ROUTER_ABI, signer);
-          const from = $("fromToken").value;
-          const to = $("toToken").value;
-          const amtIn = $("fromAmount").value;
-          const slippage = parseFloat($("slippage").value);
-          const deadlineMins = parseInt($("deadline").value);
+          const from = $("fromToken").value,
+            to = $("toToken").value,
+            amtIn = $("fromAmount").value;
+          const slippage = parseFloat($("slippage").value),
+            deadlineMins = parseInt($("deadline").value);
           if (!amtIn) return toast("Enter amount", "error");
-
           const fromMeta =
             from === "ETH"
               ? { decimals: 18 }
               : tokenDetails.find((t) => t.address === from);
-          const path = buildPath(from, to);
+          const path =
+            from === "ETH"
+              ? [ADDR.WETH, to]
+              : to === "ETH"
+              ? [from, ADDR.WETH]
+              : [from, ADDR.WETH, to];
           const amounts = await router.getAmountsOut(
             ethers.parseUnits(amtIn, fromMeta.decimals),
             path
           );
-
           const amtOutMin =
             (amounts[amounts.length - 1] * BigInt(100 - slippage)) / 100n;
           const deadline = Math.floor(Date.now() / 1000) + deadlineMins * 60;
-
           let tx;
           if (from === "ETH") {
             tx = await router.swapExactETHForTokens(
@@ -427,17 +459,15 @@
               deadline
             );
           }
-
           toast("Swap submitted...", "success");
           await tx.wait();
-          toast("Swap executed successfully!", "success");
+          toast("Swap executed!", "success");
         } catch (e) {
           console.error(e);
           toast("Swap failed", "error");
         }
       }
 
-      // ---- Bind ----
       $("connectBtn").onclick = connect;
       $("quoteBtn").onclick = getQuote;
       $("swapBtn").onclick = executeSwap;
