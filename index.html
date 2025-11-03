@@ -154,7 +154,7 @@
       const ADDR = {
         ROUTER: "0x5b491662E508c2E405500C8BF9d67E5dF780cD8e",
         FACTORY: "0x342D7aeC78cd3b581eb67655B6B7Bb157328590e",
-        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225",
+        WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225", // <– Replace with actual deployed WETH on Hoodi
       };
       const TOKEN_ADDRS = [
         "0x341aac04059a1e81e6390177c4e4d1992b422d84",
@@ -173,24 +173,11 @@
         "function allowance(address,address) view returns (uint256)",
         "function approve(address,uint256) returns (bool)",
       ];
-      const PAIR_ABI = [
-        "function token0() view returns (address)",
-        "function token1() view returns (address)",
-        "function getReserves() view returns (uint112,uint112,uint32)",
-      ];
-      const ROUTER_ABI = [
-        "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
-        "function swapExactTokensForTokens(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) external returns (uint[] memory amounts)",
-        "function swapExactETHForTokens(uint amountOutMin,address[] calldata path,address to,uint deadline) payable external returns (uint[] memory amounts)",
-        "function swapExactTokensForETH(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) external returns (uint[] memory amounts)",
-      ];
 
       // ---- State ----
       let provider, signer, account;
       const rpcProvider = new ethers.JsonRpcProvider(HOODI.rpc);
-      let tokenDetails = [];
 
-      // ---- Utils ----
       const $ = (id) => document.getElementById(id);
       function toast(msg, type = "info") {
         const t = $("toast");
@@ -204,19 +191,7 @@
         t.style.display = "block";
         setTimeout(() => (t.style.display = "none"), 4000);
       }
-      function metaFor(addr) {
-        if (addr === "ETH")
-          return { symbol: "ETH", address: "ETH", decimals: 18 };
-        return tokenDetails.find(
-          (t) => t.address.toLowerCase() === addr.toLowerCase()
-        );
-      }
-      function buildPath(from, to) {
-        if (from === "ETH" && to !== "ETH") return [ADDR.WETH, to];
-        if (from !== "ETH" && to === "ETH") return [from, ADDR.WETH];
-        if (from !== "ETH" && to !== "ETH") return [from, ADDR.WETH, to];
-        throw new Error("ETH→ETH not valid");
-      }
+
       async function ensureHoodi() {
         if (!window.ethereum) return;
         const net = await provider.getNetwork();
@@ -244,13 +219,11 @@
                 },
               ],
             });
-          } else {
-            throw e;
-          }
+          } else throw e;
         }
       }
 
-      // ---- Connect & load ----
+      // ---- Connect wallet ----
       async function connect() {
         if (!window.ethereum) return toast("Please install MetaMask!", "error");
         provider = new ethers.BrowserProvider(window.ethereum);
@@ -260,51 +233,29 @@
         $("walletAddr").textContent = account;
 
         await ensureHoodi();
+
+        // ETH balance
         const bal = await provider.getBalance(account);
         $("ethBalance").textContent = `${ethers.formatEther(bal)} ETH`;
 
-        // NEW: Fetch and display WETH balance
+        // WETH balance
         try {
-          const weth = new ethers.Contract(ADDR.WETH, ERC20_ABI, provider);
+          const weth = new ethers.Contract(ADDR.WETH, ERC20_ABI, rpcProvider);
           const wethBal = await weth.balanceOf(account);
           $("wethBalance").textContent = `${ethers.formatUnits(
             wethBal,
             18
           )} WETH`;
         } catch (e) {
-          $("wethBalance").textContent = "Error fetching";
+          $("wethBalance").textContent = "Unavailable (check contract)";
           console.error("WETH balance error:", e);
         }
 
-        await loadTokens();
-        await loadPools();
-        await initTradeUI();
+        toast("Wallet connected successfully!", "success");
       }
 
-      // (All other functions remain unchanged from your version)
-      async function loadTokens() {
-        /* unchanged */
-      }
-      async function loadPools() {
-        /* unchanged */
-      }
-      async function initTradeUI() {
-        /* unchanged */
-      }
-      async function getQuote() {
-        /* unchanged */
-      }
-      async function ensureApproval(token, owner, spender, amount) {
-        /* unchanged */
-      }
-      async function executeSwap() {
-        /* unchanged */
-      }
-
-      // ---- Bind ----
+      // Bind buttons
       $("connectBtn").onclick = connect;
-      $("quoteBtn").onclick = getQuote;
-      $("swapBtn").onclick = executeSwap;
     </script>
   </body>
 </html>
