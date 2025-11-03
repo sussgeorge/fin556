@@ -183,11 +183,9 @@
           "ethBalance"
         ).textContent = `${ethers.formatEther(bal)} ETH`;
 
-        await loadTokens();
+        await loadTokens(); // tokens first
         await loadPools();
-
-        // ✅ delay initTradeUI until tokenDetails populated
-        setTimeout(initTradeUI, 1000);
+        await initTradeUI(); // only runs after tokenDetails ready
       }
 
       async function loadTokens() {
@@ -255,24 +253,29 @@
         }
       }
 
-      function initTradeUI() {
+      async function initTradeUI() {
         const fromSel = document.getElementById("fromToken");
         const toSel = document.getElementById("toToken");
         fromSel.innerHTML = "";
         toSel.innerHTML = "";
+
         const allTokens = [{ symbol: "ETH", address: "ETH" }, ...tokenDetails];
         allTokens.forEach((t) => {
-          const o1 = document.createElement("option");
-          o1.value = t.address;
-          o1.textContent = t.symbol;
-          fromSel.appendChild(o1);
-          const o2 = document.createElement("option");
-          o2.value = t.address;
-          o2.textContent = t.symbol;
-          toSel.appendChild(o2);
+          const opt1 = document.createElement("option");
+          opt1.value = t.address;
+          opt1.textContent = t.symbol;
+          fromSel.appendChild(opt1);
+
+          const opt2 = document.createElement("option");
+          opt2.value = t.address;
+          opt2.textContent = t.symbol;
+          toSel.appendChild(opt2);
         });
+
         fromSel.value = "ETH";
-        if (tokenDetails[0]) toSel.value = tokenDetails[0].address;
+        if (tokenDetails[0]) {
+          toSel.value = tokenDetails[0].address;
+        }
       }
 
       document.getElementById("connectBtn").onclick = connect;
