@@ -151,6 +151,27 @@
       .warn {
         color: #b36b00;
       }
+      #pairSummaries {
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .pair-card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #f8fafc;
+        padding: 10px 14px;
+        width: 220px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+      }
+      .pair-card strong {
+        color: var(--nav);
+        font-size: 0.95rem;
+      }
       @media (max-width: 900px) {
         .col-account {
           flex: 1 1 100%;
@@ -265,7 +286,7 @@
       const TOKENS = [
         { address: "0x341aac04059a1e81e6390177c4e4d1992b422d84" },
         { address: "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435" },
-        { address: "0x9c3ff3d8686b0A3c1eFDFeaD92565275e6Fb8051" },
+        { address: "0xC3c7E367D9047F8871ef553C02938189ca122f73" },
         { address: "0x97a47102478072710fBe2b2fE6c762b1F6cf2B06" },
         { address: "0x341dA74120EBFE04041F0D245cff62950ccfd64F" },
       ];
@@ -288,8 +309,10 @@
         "function swapExactTokensForETH(uint amountIn,uint amountOutMin,address[] path,address to,uint deadline) returns(uint[] amounts)",
         "function swapExactTokensForTokens(uint amountIn,uint amountOutMin,address[] path,address to,uint deadline) returns(uint[] amounts)",
       ];
+
       let provider, signer, account;
       const el = (id) => document.getElementById(id);
+
       function toast(msg, type = "info") {
         const t = el("toast");
         t.textContent = msg;
@@ -302,6 +325,16 @@
         return Number(x).toLocaleString(undefined, {
           maximumFractionDigits: d,
         });
+      }
+      // Adaptive formatting for tiny/huge ratios so they never show as 0
+      function smartFmt(value) {
+        const n = Number(value);
+        if (!isFinite(n) || n === 0) return "0";
+        if (n < 0.000001) return n.toExponential(3); // scientific for ultra-small
+        if (n < 0.001) return n.toFixed(8);
+        if (n < 1) return n.toFixed(6);
+        if (n < 1000) return n.toFixed(4);
+        return n.toFixed(2);
       }
 
       async function connect() {
@@ -383,7 +416,7 @@
                 decimals: dec,
                 balance: ethers.formatUnits(bal, dec),
               };
-            } catch (e) {
+            } catch {
               toast(`Token load failed: ${t.address}`, "error");
               return null;
             }
@@ -393,14 +426,15 @@
         TOKENS.push(...results.filter(Boolean));
         for (const t of TOKENS) {
           const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${t.name}</td><td>${t.symbol}</td><td>${
-            t.decimals
-          }</td><td>${fmt(t.balance)}</td><td><a href="${
-            HOODI.explorer
-          }/address/${t.address}" target="_blank">${t.address.slice(
-            0,
-            8
-          )}…${t.address.slice(-6)}</a></td>`;
+          tr.innerHTML =
+            `<td>${t.name}</td><td>${t.symbol}</td><td>${
+              t.decimals
+            }</td><td>${fmt(t.balance)}</td>` +
+            `<td><a href="${HOODI.explorer}/address/${
+              t.address
+            }" target="_blank">${t.address.slice(0, 8)}…${t.address.slice(
+              -6
+            )}</a></td>`;
           tbody.appendChild(tr);
         }
       }
@@ -418,6 +452,7 @@
         }
         return pairs;
       }
+
       async function renderPairs() {
         const holder = el("pairList");
         const PAIRS = await fetchPairs();
@@ -426,6 +461,8 @@
           return;
         }
         let html = `<table><tr><th>Pair Address</th><th>Token0</th><th>Reserve0</th><th>Token1</th><th>Reserve1</th></tr>`;
+        const summaryCards = [];
+
         for (const p of PAIRS) {
           try {
             const pair = new ethers.Contract(p.address, PAIR_ABI, signer);
@@ -436,20 +473,46 @@
             ]);
             const token0 = TOKENS.find(
               (x) => x.address.toLowerCase() === t0.toLowerCase()
-            ) || { symbol: "WETH" };
+            ) || { symbol: "WETH", decimals: 18 };
             const token1 = TOKENS.find(
               (x) => x.address.toLowerCase() === t1.toLowerCase()
-            ) || { symbol: "WETH" };
-            html += `<tr><td><a href="${HOODI.explorer}/address/${
+            ) || { symbol: "WETH", decimals: 18 };
+
+            const reserve0 = ethers.formatUnits(res[0], token0.decimals);
+            const reserve1 = ethers.formatUnits(res[1], token1.decimals);
+
+            html += `<tr>
+              <td><a href="${HOODI.explorer}/address/${
               p.address
             }" target="_blank">${p.address.slice(0, 8)}…${p.address.slice(
               -6
-            )}</a></td><td>${token0.symbol}</td><td>${fmt(res[0])}</td><td>${
-              token1.symbol
-            }</td><td>${fmt(res[1])}</td></tr>`;
-          } catch {}
+            )}</a></td>
+              <td>${token0.symbol}</td><td>${fmt(reserve0)}</td>
+              <td>${token1.symbol}</td><td>${fmt(reserve1)}</td>
+            </tr>`;
+
+            const tokenToEth = smartFmt(Number(reserve1) / Number(reserve0));
+            const ethToToken = smartFmt(Number(reserve0) / Number(reserve1));
+
+            const card = `
+              <div class="pair-card" onclick="window.open('${
+                HOODI.explorer
+              }/address/${p.address}', '_blank')">
+                <strong>${token0.symbol} / ${token1.symbol}</strong><br/>
+                ${fmt(reserve0)} / ${fmt(reserve1)}<br/>
+                TOKEN → ${token1.symbol}: ${tokenToEth}<br/>
+                ${token1.symbol} → TOKEN: ${ethToToken}
+              </div>`;
+            summaryCards.push(card);
+          } catch (err) {
+            console.warn("Pair render error:", err);
+          }
         }
-        holder.innerHTML = html + "</table>";
+
+        holder.innerHTML =
+          html +
+          "</table>" +
+          `<div id="pairSummaries">${summaryCards.join("")}</div>`;
       }
 
       const router = () => new ethers.Contract(ADDR.ROUTER, ROUTER_ABI, signer);
@@ -543,11 +606,13 @@
             fromMeta.decimals ?? 18
           );
           if (amountIn <= 0n) return toast("Enter a valid amount.", "warn");
+
           const p = pathForSwap(from, to);
           const amounts = await router().getAmountsOut(amountIn, p);
           const out = amounts.at(-1);
           const outMin =
             out - (out * BigInt(Math.floor(slippage * 100))) / 10000n;
+
           let tx;
           if (from === "ETH") {
             tx = await router().swapExactETHForTokens(
@@ -576,6 +641,7 @@
               deadline
             );
           }
+
           toast("Swap pending...");
           await tx.wait();
           toast("Swap success!", "success");
