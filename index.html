@@ -131,7 +131,7 @@
           </div>
           <div><strong>Network:</strong> <span id="chain">–</span></div>
           <div><strong>Native Balance:</strong> <span id="ethBal">–</span></div>
-          <button id="btnSwitch">Switch Network</button>
+          <button id="btnSwitch">Reconnect</button>
         </div>
       </section>
 
@@ -214,6 +214,8 @@
       ];
 
       let provider, signer, account;
+      const rpcProvider = new ethers.JsonRpcProvider(HOODI.rpc);
+
       const el = (id) => document.getElementById(id);
 
       function toast(msg, type = "info") {
@@ -231,8 +233,13 @@
         await provider.send("eth_requestAccounts", []);
         signer = await provider.getSigner();
         account = await signer.getAddress();
+
         el("acc").textContent = account;
         el("walletAddressQuick").textContent = account;
+
+        const net = await provider.getNetwork();
+        el("chain").textContent = `${net.name || "Hoodi"} (${net.chainId})`;
+
         await postConnect();
       }
 
@@ -240,12 +247,14 @@
         try {
           const bal = await provider.getBalance(account);
           el("ethBal").textContent = `${ethers.formatEther(bal)} ETH`;
+
           await renderTokens();
           await renderPairs();
           await initTradeUI();
           toast("Wallet connected and data loaded!");
         } catch (err) {
           console.error("postConnect error", err);
+          toast("Failed to load on-chain data", "error");
         }
       }
 
@@ -254,7 +263,7 @@
         tbody.innerHTML = "";
         for (const t of TOKENS) {
           try {
-            const c = new ethers.Contract(t.address, ERC20_ABI, signer);
+            const c = new ethers.Contract(t.address, ERC20_ABI, rpcProvider);
             const [name, symbol, decimals, bal] = await Promise.all([
               c.name(),
               c.symbol(),
@@ -284,13 +293,13 @@
           const factory = new ethers.Contract(
             ADDR.FACTORY,
             ["function getPair(address,address) view returns (address)"],
-            signer
+            rpcProvider
           );
           let html = `<table><tr><th>Pair Address</th><th>Token0</th><th>Reserve0</th><th>Token1</th><th>Reserve1</th></tr>`;
           for (const t of TOKENS) {
             const pairAddr = await factory.getPair(t.address, ADDR.WETH);
             if (pairAddr === ethers.ZeroAddress) continue;
-            const pair = new ethers.Contract(pairAddr, PAIR_ABI, signer);
+            const pair = new ethers.Contract(pairAddr, PAIR_ABI, rpcProvider);
             const [t0, t1, res] = await Promise.all([
               pair.token0(),
               pair.token1(),
@@ -309,6 +318,7 @@
           }
           holder.innerHTML = html + "</table>";
         } catch (err) {
+          console.error("renderPairs error", err);
           holder.textContent = "Failed to load pools.";
         }
       }
