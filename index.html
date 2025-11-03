@@ -141,7 +141,7 @@
         WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225",
       };
 
-      const TOKENS = [
+      const TOKEN_ADDRS = [
         "0x341aac04059a1e81e6390177c4e4d1992b422d84",
         "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435",
         "0xC3c7E367D9047F8871ef553C02938189ca122f73",
@@ -164,32 +164,38 @@
 
       let provider, signer, account;
       const rpcProvider = new ethers.JsonRpcProvider(HOODI.rpc);
+      let tokenDetails = [];
 
       async function connect() {
-        if (!window.ethereum) return alert("Install MetaMask!");
+        if (!window.ethereum) return alert("Please install MetaMask!");
         provider = new ethers.BrowserProvider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         signer = await provider.getSigner();
         account = await signer.getAddress();
         document.getElementById("walletAddr").textContent = account;
-        const network = await provider.getNetwork();
-        document.getElementById("chainName").textContent =
-          network.name || "Hoodi Testnet";
+
+        const net = await provider.getNetwork();
+        document.getElementById(
+          "chainName"
+        ).textContent = `${net.name} (${net.chainId})`;
         const bal = await provider.getBalance(account);
         document.getElementById(
           "ethBalance"
         ).textContent = `${ethers.formatEther(bal)} ETH`;
+
         await loadTokens();
         await loadPools();
-        await initTradeUI();
+
+        // ✅ delay initTradeUI until tokenDetails populated
+        setTimeout(initTradeUI, 1000);
       }
 
       async function loadTokens() {
         const tbody = document.querySelector("#tokenTable tbody");
         tbody.innerHTML = "";
-        window.tokenDetails = [];
+        tokenDetails = [];
 
-        for (const addr of TOKENS) {
+        for (const addr of TOKEN_ADDRS) {
           try {
             const c = new ethers.Contract(addr, ERC20_ABI, rpcProvider);
             const [name, symbol, decimals, balance] = await Promise.all([
@@ -207,9 +213,9 @@
               0,
               6
             )}...${addr.slice(-4)}</a></td></tr>`;
-            window.tokenDetails.push({ name, symbol, address: addr, decimals });
+            tokenDetails.push({ name, symbol, address: addr, decimals });
           } catch (e) {
-            console.warn("Token error:", addr, e);
+            console.warn("Token load failed:", addr);
           }
         }
       }
@@ -224,7 +230,7 @@
             rpcProvider
           );
           let html = `<table><tr><th>Pair Address</th><th>Token0</th><th>Reserve0</th><th>Token1</th><th>Reserve1</th></tr>`;
-          for (const token of TOKENS) {
+          for (const token of TOKEN_ADDRS) {
             const pairAddr = await factory.getPair(token, ADDR.WETH);
             if (pairAddr === ethers.ZeroAddress) continue;
             const pair = new ethers.Contract(pairAddr, PAIR_ABI, rpcProvider);
@@ -249,29 +255,24 @@
         }
       }
 
-      async function initTradeUI() {
+      function initTradeUI() {
         const fromSel = document.getElementById("fromToken");
         const toSel = document.getElementById("toToken");
         fromSel.innerHTML = "";
         toSel.innerHTML = "";
-        const allTokens = [
-          { symbol: "ETH", address: "ETH" },
-          ...(window.tokenDetails || []),
-        ];
-        for (const t of allTokens) {
-          const opt1 = document.createElement("option");
-          opt1.value = t.address;
-          opt1.textContent = t.symbol;
-          fromSel.appendChild(opt1);
-          const opt2 = document.createElement("option");
-          opt2.value = t.address;
-          opt2.textContent = t.symbol;
-          toSel.appendChild(opt2);
-        }
+        const allTokens = [{ symbol: "ETH", address: "ETH" }, ...tokenDetails];
+        allTokens.forEach((t) => {
+          const o1 = document.createElement("option");
+          o1.value = t.address;
+          o1.textContent = t.symbol;
+          fromSel.appendChild(o1);
+          const o2 = document.createElement("option");
+          o2.value = t.address;
+          o2.textContent = t.symbol;
+          toSel.appendChild(o2);
+        });
         fromSel.value = "ETH";
-        if (window.tokenDetails.length > 0) {
-          toSel.value = window.tokenDetails[0].address;
-        }
+        if (tokenDetails[0]) toSel.value = tokenDetails[0].address;
       }
 
       document.getElementById("connectBtn").onclick = connect;
