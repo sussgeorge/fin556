@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -94,7 +94,7 @@
         <h3>Wallet Connection</h3>
         <button id="connectBtn">🔗 Connect Wallet</button>
         <p>Wallet: <span id="walletAddr">Not connected</span></p>
-        <p>Network: <span id="chainName">560048</span></p>
+        <p>Network: <span id="chainName">–</span></p>
         <p>ETH Balance: <span id="ethBalance">–</span></p>
       </section>
 
@@ -143,7 +143,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-      // ---- Network & addresses ----
+      // --------- Network & addresses ----------
       const HOODI = {
         chainIdDec: 560048,
         chainIdHex: "0x88BB0",
@@ -156,14 +156,14 @@
         WETH: "0x7a1fd5C3185fe6261577AccEe220844Dc9026225",
       };
       const TOKEN_ADDRS = [
-        "0x341aac04059a1e81e6390177c4e4d1992b422d84",
-        "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435",
-        "0xC3c7E367D9047F8871ef553C02938189ca122f73",
-        "0x97a47102478072710fBe2b2fE6c762b1F6cf2B06",
-        "0x341dA74120EBFE04041F0D245cff62950ccfd64F",
+        "0x341aac04059a1e81e6390177c4e4d1992b422d84", // HOODI
+        "0x7Be129f76C4FC82752Dd1ddCCC154F2298e2a435", // XLZD2
+        "0xC3c7E367D9047F8871ef553C02938189ca122f73", // SToken-A
+        "0x97a47102478072710fBe2b2fE6c762b1F6cf2B06", // TTK
+        "0x341dA74120EBFE04041F0D245cff62950ccfd64F", // C-K-H
       ];
 
-      // ---- ABIs ----
+      // --------- ABIs ----------
       const ERC20_ABI = [
         "function name() view returns (string)",
         "function symbol() view returns (string)",
@@ -184,12 +184,12 @@
         "function swapExactTokensForETH(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) external returns (uint[] memory amounts)",
       ];
 
-      // ---- State ----
+      // --------- State ----------
       let provider, signer, account;
       const rpcProvider = new ethers.JsonRpcProvider(HOODI.rpc);
       let tokenDetails = []; // {name,symbol,address,decimals}
 
-      // ---- Utils ----
+      // --------- Utils ----------
       const $ = (id) => document.getElementById(id);
       function toast(msg, type = "info") {
         const t = $("toast");
@@ -211,10 +211,11 @@
         );
       }
       function buildPath(from, to) {
+        // UniswapV2-style routing via WETH
         if (from === "ETH" && to !== "ETH") return [ADDR.WETH, to];
         if (from !== "ETH" && to === "ETH") return [from, ADDR.WETH];
         if (from !== "ETH" && to !== "ETH") return [from, ADDR.WETH, to];
-        throw new Error("ETH→ETH not valid");
+        throw new Error("ETH→ETH swap is not valid");
       }
       async function ensureHoodi() {
         if (!window.ethereum) return;
@@ -249,7 +250,7 @@
         }
       }
 
-      // ---- Connect & load ----
+      // --------- Connect & load ----------
       async function connect() {
         if (!window.ethereum) return toast("Please install MetaMask!", "error");
         provider = new ethers.BrowserProvider(window.ethereum);
@@ -259,6 +260,8 @@
         $("walletAddr").textContent = account;
 
         await ensureHoodi();
+        const net = await provider.getNetwork();
+        $("chainName").textContent = `${net.name} (${net.chainId})`;
         const bal = await provider.getBalance(account);
         $("ethBalance").textContent = `${ethers.formatEther(bal)} ETH`;
 
@@ -281,13 +284,15 @@
               c.balanceOf(account),
             ]);
             tokenDetails.push({ name, symbol, address: addr, decimals });
+            const balFmt = ethers.formatUnits(balance, decimals);
             tbody.innerHTML += `<tr><td>${name}</td><td>${symbol}</td><td>${decimals}</td>
-          <td>${Number(ethers.formatUnits(balance, decimals)).toFixed(4)}</td>
-          <td><a href="${
-            HOODI.explorer
-          }/address/${addr}" target="_blank">${addr.slice(0, 6)}...${addr.slice(
-              -4
-            )}</a></td></tr>`;
+              <td>${Number(balFmt).toFixed(4)}</td>
+              <td><a href="${
+                HOODI.explorer
+              }/address/${addr}" target="_blank">${addr.slice(
+              0,
+              6
+            )}...${addr.slice(-4)}</a></td></tr>`;
           } catch (e) {
             console.warn("Token load failed:", addr);
           }
@@ -295,18 +300,17 @@
       }
 
       async function loadPools() {
-        const list = $("poolList");
-        list.textContent = "Loading...";
+        const holder = $("poolList");
+        holder.textContent = "Loading...";
         try {
           const factory = new ethers.Contract(
             ADDR.FACTORY,
             ["function getPair(address,address) view returns (address)"],
             rpcProvider
           );
-          let html = `<table>
-        <tr><th>Pair</th><th>Token0</th><th>Token1</th><th>Reserve0</th><th>Reserve1</th><th>Price(0→1)</th><th>Price(1→0)</th></tr>`;
-          for (const t of TOKEN_ADDRS) {
-            const pairAddr = await factory.getPair(t, ADDR.WETH);
+          let html = `<table><tr><th>Pair Address</th><th>Token0</th><th>Reserve0</th><th>Token1</th><th>Reserve1</th></tr>`;
+          for (const token of TOKEN_ADDRS) {
+            const pairAddr = await factory.getPair(token, ADDR.WETH);
             if (pairAddr === ethers.ZeroAddress) continue;
             const pair = new ethers.Contract(pairAddr, PAIR_ABI, rpcProvider);
             const [t0, t1, res] = await Promise.all([
@@ -314,38 +318,18 @@
               pair.token1(),
               pair.getReserves(),
             ]);
-            // read token metadata for formatting
-            const erc0 = new ethers.Contract(t0, ERC20_ABI, rpcProvider);
-            const erc1 = new ethers.Contract(t1, ERC20_ABI, rpcProvider);
-            const [s0, s1, d0, d1] = await Promise.all([
-              erc0.symbol(),
-              erc1.symbol(),
-              erc0.decimals(),
-              erc1.decimals(),
-            ]);
-            const r0 = parseFloat(ethers.formatUnits(res[0], d0));
-            const r1 = parseFloat(ethers.formatUnits(res[1], d1));
-            const p01 = r1 / r0; // token0 in terms of token1
-            const p10 = r0 / r1; // token1 in terms of token0
-            html += `<tr>
-          <td><a href="${
-            HOODI.explorer
-          }/address/${pairAddr}" target="_blank">${pairAddr.slice(
+            html += `<tr><td><a href="${
+              HOODI.explorer
+            }/address/${pairAddr}" target="_blank">${pairAddr.slice(
               0,
               8
             )}...</a></td>
-          <td>${s0}</td><td>${s1}</td>
-          <td>${isFinite(r0) ? r0.toFixed(6) : "-"}</td><td>${
-              isFinite(r1) ? r1.toFixed(6) : "-"
-            }</td>
-          <td>${isFinite(p01) ? p01.toFixed(8) : "-"} ${s1}/${s0}</td>
-          <td>${isFinite(p10) ? p10.toFixed(8) : "-"} ${s0}/${s1}</td>
-        </tr>`;
+                     <td>${t0.slice(0, 6)}...</td><td>${res[0]}</td>
+                     <td>${t1.slice(0, 6)}...</td><td>${res[1]}</td></tr>`;
           }
-          list.innerHTML = html + "</table>";
-        } catch (err) {
-          console.error(err);
-          list.textContent = "Failed to load pools";
+          holder.innerHTML = html + "</table>";
+        } catch (e) {
+          holder.textContent = "Failed to load pools";
         }
       }
 
@@ -372,7 +356,7 @@
         if (tokenDetails[0]) toSel.value = tokenDetails[0].address;
       }
 
-      // ---- Quote & Swap ----
+      // --------- Quote & Swap ----------
       async function getQuote() {
         try {
           const from = $("fromToken").value;
@@ -382,7 +366,6 @@
             return toast("Enter a valid pair and amount", "error");
 
           const fromMeta = metaFor(from);
-          const toMeta = metaFor(to);
           const path = buildPath(from, to);
           const router = new ethers.Contract(
             ADDR.ROUTER,
@@ -392,6 +375,8 @@
 
           const amountIn = ethers.parseUnits(amt, fromMeta.decimals);
           const amounts = await router.getAmountsOut(amountIn, path);
+
+          const toMeta = metaFor(to);
           $("toAmount").value = ethers.formatUnits(
             amounts.at(-1),
             toMeta.decimals
@@ -413,7 +398,7 @@
       }
 
       async function executeSwap() {
-        const btn = $("swapBtn");
+        const swapBtn = $("swapBtn");
         try {
           if (!signer) return toast("Connect wallet first", "error");
           await ensureHoodi();
@@ -421,8 +406,8 @@
           const from = $("fromToken").value;
           const to = $("toToken").value;
           const amt = $("fromAmount").value;
-          const slip = Math.max(0, Number($("slippage").value || "1"));
-          const deadline =
+          const slipPct = Math.max(0, Number($("slippage").value || "1"));
+          const dl =
             Math.floor(Date.now() / 1000) +
             60 * Number($("deadline").value || "10");
           if (!amt || Number(amt) <= 0 || from === to)
@@ -432,15 +417,14 @@
           const toMeta = metaFor(to);
           const amountIn = ethers.parseUnits(amt, fromMeta.decimals);
           const path = buildPath(from, to);
-          const router = new ethers.Contract(ADDR.ROUTER, ROUTER_ABI, signer);
 
-          // Slippage calc from live quote
+          const router = new ethers.Contract(ADDR.ROUTER, ROUTER_ABI, signer);
           const quoted = await router.getAmountsOut(amountIn, path);
           const out = quoted.at(-1);
           const amountOutMin =
-            out - (out * BigInt(Math.floor(slip * 100))) / 10000n;
+            out - (out * BigInt(Math.floor(slipPct * 100))) / 10000n;
 
-          btn.disabled = true;
+          swapBtn.disabled = true;
           toast("Sending swap…");
 
           let tx;
@@ -449,7 +433,7 @@
               amountOutMin,
               path,
               account,
-              deadline,
+              dl,
               { value: amountIn }
             );
           } else if (to === "ETH") {
@@ -459,7 +443,7 @@
               amountOutMin,
               path,
               account,
-              deadline
+              dl
             );
           } else {
             await ensureApproval(from, account, ADDR.ROUTER, amountIn);
@@ -468,25 +452,25 @@
               amountOutMin,
               path,
               account,
-              deadline
+              dl
             );
           }
 
           await tx.wait();
           toast("Swap successful!", "success");
-          await loadTokens(); // refresh balances
-          await getQuote(); // refresh quote
+          await loadTokens();
+          await getQuote();
         } catch (e) {
           toast(
             "Swap failed: " + (e?.reason || e?.message || "unknown"),
             "error"
           );
         } finally {
-          btn.disabled = false;
+          swapBtn.disabled = false;
         }
       }
 
-      // ---- Bind ----
+      // --------- Bind ----------
       $("connectBtn").onclick = connect;
       $("quoteBtn").onclick = getQuote;
       $("swapBtn").onclick = executeSwap;
