@@ -261,7 +261,7 @@ html>
 
         await ensureHoodi();
         const net = await provider.getNetwork();
-        $("chainName").textContent = `${net.name} (${net.chainId})`;
+        $("chainName").textContent = `Hoodi Testnet (${net.chainId})`;
         const bal = await provider.getBalance(account);
         $("ethBalance").textContent = `${ethers.formatEther(bal)} ETH`;
 
